@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Adawatu Dirasiah (Nota & RPG)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            padding-bottom: 2rem;
+        }
+        .arabic-text {
+            font-family: 'Amiri', serif;
+        }
+        
+        /* Panel Antaramuka */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .game-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid #4b5563;
+            border-radius: 1rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Butang Utama */
+        .btn-primary {
+            background: linear-gradient(to right, #f59e0b, #d97706);
+            color: white;
+            border: 2px solid #fcd34d;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Animasi Kad Imbasan */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 220px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        .flip-card-front {
+            background: linear-gradient(145deg, #374151, #1f2937);
+            border: 2px solid #4b5563;
+        }
+        .flip-card-back {
+            background: linear-gradient(145deg, #d97706, #b45309);
+            color: white;
+            transform: rotateY(180deg);
+            border: 2px solid #f59e0b;
+        }
+
+        /* Animasi */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating { animation: float 3s ease-in-out infinite; }
+        
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            80% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pop-in { animation: popIn 0.5s ease-out forwards; }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            50% { transform: translateX(10px) rotate(5deg); }
+            75% { transform: translateX(-10px) rotate(-5deg); }
+            100% { transform: translateX(0); }
+        }
+        .shake-animation { animation: shake 0.5s ease-in-out; }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(255, 215, 0, 1); }
+        }
+        .glowing-badge { animation: glow 2s infinite; }
+
+        /* Simulator Zorf */
+        .simulator-area {
+            position: relative;
+            height: 250px;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            border-radius: 1rem;
+            background: rgba(0,0,0,0.3);
+            border: 2px dashed #6b7280;
+        }
+        #sim-object {
+            position: absolute;
+            transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 4rem;
+            z-index: 10;
+        }
+        .pos-center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+        .pos-fi { top: 60%; left: 50%; transform: translate(-50%, -50%) scale(0.6); opacity: 0.8; z-index: 5; } 
+        .pos-ala { top: -20px; left: 50%; transform: translate(-50%, 0); } 
+        .pos-tahta { top: 180px; left: 50%; transform: translate(-50%, 0); } 
+
+        /* Bar Progress Permainan */
+        .bar-container {
+            width: 100%;
+            background-color: #374151;
+            border-radius: 9999px;
+            overflow: hidden;
+            height: 1.25rem;
+            border: 2px solid #1f2937;
+        }
+        .hp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f87171);
+            transition: width 0.5s ease-out, background-color 0.3s;
+        }
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #60a5fa);
+            transition: width 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center">
+
+    <!-- MENU UTAMA -->
+    <div id="main-menu" class="flex flex-col items-center justify-center min-h-screen w-full max-w-4xl p-6 pop-in">
+        <div class="text-7xl mb-6 floating drop-shadow-2xl">🏫✨</div>
+        <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-500 drop-shadow-lg text-center uppercase tracking-wider mb-4">
+            Adawatu Dirasiah
+        </h1>
+        <p class="text-blue-200 text-xl text-center mb-12">Pilih mod pembelajaran anda hari ini!</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+            <!-- Pilihan Nota -->
+            <div onclick="showModule('notes')" class="game-panel p-8 flex flex-col items-center text-center cursor-pointer hover:scale-105 transition transform shadow-2xl group border-blue-500 hover:border-blue-400">
+                <div class="text-6xl mb-4 group-hover:floating">📖</div>
+                <h2 class="text-3xl font-bold text-blue-300 mb-2">Buku Nota Magis</h2>
+                <p class="text-gray-300 text-sm">Belajar kosa kata, kedudukan (Zorf) dan kata tunjuk dengan bantuan audio interaktif.</p>
+                <button class="mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-full">Buka Nota</button>
+            </div>
+
+            <!-- Pilihan RPG Game -->
+            <div onclick="showModule('game')" class="game-panel p-8 flex flex-col items-center text-center cursor-pointer hover:scale-105 transition transform shadow-2xl group border-red-500 hover:border-red-400">
+                <div class="text-6xl mb-4 group-hover:floating">⚔️</div>
+                <h2 class="text-3xl font-bold text-red-400 mb-2">Misi Pengembaraan</h2>
+                <p class="text-gray-300 text-sm">Uji kefahaman anda! Kalahkan Raja Jembalang dengan menjawab soalan Bahasa Arab.</p>
+                <button class="mt-6 bg-red-600 hover:bg-red-500 text-white font-bold py-2 px-6 rounded-full">Mula Main</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUTANG KEMBALI (Global) -->
+    <button id="btn-back" onclick="showModule('menu')" class="hidden fixed top-4 left-4 z-50 bg-gray-800 border-2 border-gray-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:bg-gray-700 transition flex items-center gap-2">
+        <span>⬅️</span> Kembali
+    </button>
+
+    <!-- ==================== MODUL: NOTA MAGIS ==================== -->
+    <div id="module-notes" class="w-full max-w-4xl p-4 hidden mt-16">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-blue-500 drop-shadow-lg uppercase tracking-wider mb-2">
+                Buku Nota Magis Wira
+            </h1>
+            <p class="text-blue-200 text-lg">Tekan ikon 🔊 untuk mendengar sebutan!</p>
+        </header>
+
+        <!-- Navigasi Tab Nota -->
+        <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button onclick="switchNoteTab('tab-vocab')" id="btn-vocab" class="btn-primary px-6 py-3 rounded-full font-bold shadow-lg">
+                🎒 Kosa Kata
+            </button>
+            <button onclick="switchNoteTab('tab-isyarah')" id="btn-isyarah" class="bg-gray-800 text-gray-300 border-2 border-gray-600 hover:bg-gray-700 px-6 py-3 rounded-full font-bold shadow-lg transition">
+                👉 Kata Tunjuk
+            </button>
+            <button onclick="switchNoteTab('tab-zorf')" id="btn-zorf" class="bg-gray-800 text-gray-300 border-2 border-gray-600 hover:bg-gray-700 px-6 py-3 rounded-full font-bold shadow-lg transition">
+                📦 Kedudukan
+            </button>
+        </div>
+
+        <!-- NOTA TAB 1: KOSA KATA -->
+        <section id="tab-vocab" class="glass-panel p-6 md:p-8 block">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6" id="flashcards-container">
+                <!-- Dijana oleh JS -->
+            </div>
+        </section>
+
+        <!-- NOTA TAB 2: KATA TUNJUK -->
+        <section id="tab-isyarah" class="glass-panel p-6 md:p-8 hidden">
+            <div class="flex flex-col md:flex-row gap-6">
+                <!-- Haza -->
+                <div class="flex-1 bg-blue-900 bg-opacity-50 border-2 border-blue-500 rounded-xl p-6 text-center">
+                    <div class="text-6xl mb-2">👦</div>
+                    <div class="flex items-center justify-center gap-4 mb-2">
+                        <h3 class="arabic-text text-5xl text-blue-300 font-bold">هَذَا</h3>
+                        <button onclick="playArabicAudio('هَذَا')" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-full shadow text-xl">🔊</button>
+                    </div>
+                    <p class="text-xl font-bold text-white mb-4">Haza (Ini Lelaki)</p>
+                    <p class="text-sm text-blue-200 mb-6 bg-blue-950 p-3 rounded-lg">Digunakan untuk perkataan yang <strong>TIDAK</strong> berakhir dengan huruf Ta' Marbutoh (ة).</p>
+                    
+                    <ul class="space-y-3">
+                        <li class="bg-blue-800 p-3 rounded-lg flex justify-between items-center shadow">
+                            <span class="text-sm font-sans text-gray-300">Ini Buku</span>
+                            <div class="flex items-center gap-3">
+                                <span class="arabic-text text-2xl font-bold">هَذَا كِتَابٌ</span>
+                                <button onclick="playArabicAudio('هَذَا كِتَابٌ')" class="bg-gray-700 hover:bg-gray-600 p-1 rounded-full text-sm">🔊</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Hazihi -->
+                <div class="flex-1 bg-pink-900 bg-opacity-50 border-2 border-pink-500 rounded-xl p-6 text-center">
+                    <div class="text-6xl mb-2">👧</div>
+                    <div class="flex items-center justify-center gap-4 mb-2">
+                        <h3 class="arabic-text text-5xl text-pink-300 font-bold">هَذِهِ</h3>
+                        <button onclick="playArabicAudio('هَذِهِ')" class="bg-pink-600 hover:bg-pink-500 p-2 rounded-full shadow text-xl">🔊</button>
+                    </div>
+                    <p class="text-xl font-bold text-white mb-4">Hazihi (Ini Perempuan)</p>
+                    <p class="text-sm text-pink-200 mb-6 bg-pink-950 p-3 rounded-lg">Digunakan untuk perkataan yang <strong>BERAKHIR</strong> dengan Ta' Marbutoh (<span class="text-pink-400 font-bold">ة</span>).</p>
+                    
+                    <ul class="space-y-3">
+                        <li class="bg-pink-800 p-3 rounded-lg flex justify-between items-center shadow">
+                            <span class="text-sm font-sans text-gray-300">Ini Pembaris</span>
+                            <div class="flex items-center gap-3">
+                                <span class="arabic-text text-2xl font-bold">هَذِهِ مِسْطَرَةٌ</span>
+                                <button onclick="playArabicAudio('هَذِهِ مِسْطَرَةٌ')" class="bg-gray-700 hover:bg-gray-600 p-1 rounded-full text-sm">🔊</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTA TAB 3: KEDUDUKAN -->
+        <section id="tab-zorf" class="glass-panel p-6 md:p-8 hidden">
+            <div class="flex flex-col md:flex-row items-center gap-8 justify-center mt-4">
+                <div class="simulator-area flex-shrink-0 flex items-center justify-center">
+                    <div class="text-9xl z-0" id="base-object">🎒</div>
+                    <div id="sim-object" class="pos-center shadow-lg filter drop-shadow-xl">📏</div>
+                </div>
+
+                <div class="flex flex-col gap-4 w-full max-w-xs">
+                    <button onclick="moveObject('fi', 'فِي')" class="group relative px-4 py-3 bg-purple-900 border-2 border-purple-400 rounded-xl overflow-hidden hover:bg-purple-700 transition shadow-lg text-left flex justify-between items-center">
+                        <div>
+                            <div class="arabic-text text-3xl text-purple-200 font-bold mb-1">فِي <span class="text-sm font-sans ml-2 text-white">(Fi)</span></div>
+                            <div class="text-xs text-purple-300">Maksud: Di Dalam</div>
+                        </div>
+                        <div onclick="event.stopPropagation(); playArabicAudio('فِي')" class="bg-purple-600 p-2 rounded-full hover:bg-purple-500">🔊</div>
+                    </button>
+
+                    <button onclick="moveObject('ala', 'عَلَى')" class="group relative px-4 py-3 bg-green-900 border-2 border-green-400 rounded-xl overflow-hidden hover:bg-green-700 transition shadow-lg text-left flex justify-between items-center">
+                        <div>
+                            <div class="arabic-text text-3xl text-green-200 font-bold mb-1">عَلَى <span class="text-sm font-sans ml-2 text-white">('Ala)</span></div>
+                            <div class="text-xs text-green-300">Maksud: Di Atas</div>
+                        </div>
+                        <div onclick="event.stopPropagation(); playArabicAudio('عَلَى')" class="bg-green-600 p-2 rounded-full hover:bg-green-500">🔊</div>
+                    </button>
+
+                    <button onclick="moveObject('tahta', 'تَحْتَ')" class="group relative px-4 py-3 bg-red-900 border-2 border-red-400 rounded-xl overflow-hidden hover:bg-red-700 transition shadow-lg text-left flex justify-between items-center">
+                        <div>
+                            <div class="arabic-text text-3xl text-red-200 font-bold mb-1">تَحْتَ <span class="text-sm font-sans ml-2 text-white">(Tahta)</span></div>
+                            <div class="text-xs text-red-300">Maksud: Di Bawah</div>
+                        </div>
+                        <div onclick="event.stopPropagation(); playArabicAudio('تَحْتَ')" class="bg-red-600 p-2 rounded-full hover:bg-red-500">🔊</div>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-gray-800 p-4 rounded-lg border border-gray-600 text-center flex flex-col items-center gap-2" id="sentence-display">
+                <span class="text-gray-400 text-sm">Contoh Ayat:</span>
+                <span class="arabic-text text-4xl text-yellow-300 font-bold" id="arabic-sentence">Pilih butang di atas!</span>
+                <button id="btn-audio-sentence" class="hidden bg-gray-700 hover:bg-gray-600 py-1 px-4 rounded-full text-sm mt-2 flex items-center gap-2">🔊 Dengar Ayat</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ==================== MODUL: PERMAINAN RPG ==================== -->
+    <div id="module-game" class="w-full max-w-4xl p-4 hidden mt-16 flex-col items-center">
+        
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-yellow-500 drop-shadow-lg uppercase tracking-wider">
+                Misi Adawatu Dirasiah
+            </h1>
+        </header>
+
+        <div class="w-full flex flex-col md:flex-row gap-6">
+            
+            <!-- Kad Avatar Wira -->
+            <div class="w-full md:w-1/3 game-panel p-6 flex flex-col items-center relative" id="avatar-card">
+                <div class="text-7xl mb-4 floating drop-shadow-xl" id="avatar-emoji">🦸‍♂️</div>
+                <h2 class="text-2xl font-bold mb-4 text-center">Wira Arab</h2>
+                
+                <!-- HP Bar -->
+                <div class="w-full mb-4">
+                    <div class="flex justify-between text-sm mb-1 font-semibold text-red-300">
+                        <span>❤️ Nyawa (HP)</span>
+                        <span id="hp-text">100/100</span>
+                    </div>
+                    <div class="bar-container relative">
+                        <div id="hp-bar" class="hp-bar-fill" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- XP Bar -->
+                <div class="w-full mb-4">
+                    <div class="flex justify-between text-sm mb-1 font-semibold text-blue-300">
+                        <span>✨ Pengalaman</span>
+                        <span id="xp-text">0/100</span>
+                    </div>
+                    <div class="bar-container relative">
+                        <div id="xp-bar" class="xp-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Stesen Cabaran -->
+            <div class="w-full md:w-2/3 game-panel p-6 flex flex-col">
+                <div class="flex justify-between items-center border-b border-gray-600 pb-3 mb-4">
+                    <h3 class="text-xl font-bold text-yellow-400" id="station-title">Stesen 1</h3>
+                    <span class="bg-gray-700 px-3 py-1 rounded-lg text-sm" id="progress-text">1 / 10</span>
+                </div>
+
+                <div class="flex-grow flex flex-col justify-center items-center text-center py-6">
+                    <p class="text-lg md:text-xl mb-4 text-gray-200" id="story-text">Sedia...</p>
+                    <div class="text-8xl mb-6 drop-shadow-2xl pop-in" id="question-emoji">❓</div>
+                </div>
+
+                <!-- Pilihan Jawapan -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto" id="options-container">
+                    <!-- Dijana oleh JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden backdrop-blur-sm">
+        
+        <!-- Modal Maklum Balas (Betul/Salah) -->
+        <div id="feedback-modal" class="game-panel p-8 max-w-md w-full text-center hidden pop-in mx-4">
+            <div id="feedback-icon" class="text-6xl mb-4">✅</div>
+            <h2 id="feedback-title" class="text-3xl font-bold mb-2">Tahniah!</h2>
+            <div class="flex justify-center items-center gap-3 mb-4 mt-2">
+                <p id="feedback-desc" class="text-3xl arabic-text font-bold text-gray-200"></p>
+                <button id="btn-audio-feedback" class="bg-blue-600 hover:bg-blue-500 p-2 rounded-full text-lg">🔊</button>
+            </div>
+            <p id="feedback-stats" class="font-bold text-lg mb-6"></p>
+            <button onclick="nextStation()" id="next-btn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow w-full transition transform hover:scale-105">
+                Teruskan ➡️
+            </button>
+        </div>
+
+        <!-- Modal Menang -->
+        <div id="victory-modal" class="game-panel p-8 max-w-lg w-full text-center hidden mx-4 border-yellow-500 border-4">
+            <h2 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-600 mb-2">MISI SELESAI!</h2>
+            <p class="text-lg text-gray-200 mb-6">Anda telah menewaskan Raja Jembalang!</p>
+            
+            <div class="glowing-badge bg-gradient-to-b from-yellow-100 to-yellow-400 text-gray-900 rounded-full w-48 h-48 mx-auto flex flex-col justify-center items-center shadow-2xl mb-6">
+                <div class="text-6xl mb-2">🏅</div>
+                <div class="font-extrabold text-lg leading-tight mt-1">PAHLAWAN<br>ARAB</div>
+            </div>
+
+            <button onclick="resetGame(); showModule('menu')" class="bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 px-8 rounded-full w-full">
+                Kembali ke Menu 🏠
+            </button>
+        </div>
+
+        <!-- Modal Kalah -->
+        <div id="gameover-modal" class="game-panel p-8 max-w-md w-full text-center hidden mx-4 border-red-500 border-4">
+            <div class="text-7xl mb-4 text-red-500">💀</div>
+            <h2 class="text-4xl font-bold text-red-500 mb-2">Tewas!</h2>
+            <p class="text-lg text-gray-300 mb-6">Nyawa wira telah habis.</p>
+            <button onclick="resetGame()" class="bg-red-600 hover:bg-red-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg w-full mb-3">
+                Cuba Lagi 🔄
+            </button>
+            <button onclick="resetGame(); showModule('menu')" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg w-full">
+                Kembali ke Menu 🏠
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /* --- SISTEM AUDIO (Web Speech API + Web Audio API) --- */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playArabicAudio(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Hentikan audio sebelumnya
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ar-SA'; // Set bahasa Arab
+                utterance.rate = 0.8; // Perlahankan sedikit supaya jelas
+                utterance.pitch = 1.1;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                console.warn("Browser tidak menyokong fungsi Text-to-Speech.");
+            }
+        }
+
+        function playSoundEffect(type) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            if (type === 'flip' || type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1); 
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'win') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime); 
+                osc.frequency.setValueAtTime(659, audioCtx.currentTime + 0.1); 
+                osc.frequency.setValueAtTime(1046, audioCtx.currentTime + 0.3); 
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.8);
+                osc.start(audioCtx.currentTime); osc.stop(audioCtx.currentTime + 0.8);
+            }
+        }
+
+        /* --- NAVIGASI MODUL --- */
+        function showModule(moduleName) {
+            playSoundEffect('click');
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('module-notes').classList.add('hidden');
+            document.getElementById('module-game').classList.add('hidden');
+            document.getElementById('btn-back').classList.remove('hidden');
+
+            if(moduleName === 'menu') {
+                document.getElementById('main-menu').classList.remove('hidden');
+                document.getElementById('btn-back').classList.add('hidden');
+            } else if(moduleName === 'notes') {
+                document.getElementById('module-notes').classList.remove('hidden');
+                renderFlashcards();
+            } else if(moduleName === 'game') {
+                document.getElementById('module-game').classList.remove('hidden');
+                resetGame();
+            }
+        }
+
+        /* --- LOGIK NOTA MAGIS --- */
+        const vocabData = [
+            { ar: "كِتَابٌ", my: "Buku", icon: "📖" },
+            { ar: "قَلَمُ رَصَاصٍ", my: "Pensel", icon: "✏️" },
+            { ar: "مِسْطَرَةٌ", my: "Pembaris", icon: "📏" },
+            { ar: "حَقِيبَةٌ", my: "Beg", icon: "🎒" },
+            { ar: "مِمْحَاةٌ", my: "Pemadam", icon: "🧼" },
+            { ar: "مِبْرَاةٌ", my: "Pengasah", icon: "⚙️" },
+            { ar: "قَلَمٌ", my: "Pen", icon: "🖊️" },
+            { ar: "دَفْتَرٌ", my: "Buku Tulis", icon: "📓" }
+        ];
+
+        function renderFlashcards() {
+            const container = document.getElementById('flashcards-container');
+            container.innerHTML = '';
+            vocabData.forEach(item => {
+                const cardHTML = `
+                    <div class="flip-card" onclick="this.classList.toggle('flipped'); playSoundEffect('flip');">
+                        <div class="flip-card-inner">
+                            <div class="flip-card-front">
+                                <div class="text-5xl mb-2">${item.icon}</div>
+                                <div class="arabic-text text-4xl text-yellow-300 font-bold mb-3">${item.ar}</div>
+                                <button onclick="event.stopPropagation(); playArabicAudio('${item.ar}')" class="bg-gray-700 hover:bg-gray-600 text-white rounded-full p-2 text-sm shadow flex items-center gap-2">
+                                    🔊 Dengar
+                                </button>
+                            </div>
+                            <div class="flip-card-back">
+                                <div class="text-2xl font-bold mb-2">${item.my}</div>
+                                <div class="mt-2 text-xs bg-black bg-opacity-30 px-3 py-2 rounded-full border border-yellow-400">
+                                    ${item.ar.includes('ة') ? 'Ta\' Marbutoh (Perempuan)' : 'Tiada Ta\' Marbutoh (Lelaki)'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += cardHTML;
+            });
+        }
+
+        function switchNoteTab(tabId) {
+            playSoundEffect('click');
+            ['tab-vocab', 'tab-isyarah', 'tab-zorf'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                let btnId = id.replace('tab-', 'btn-');
+                document.getElementById(btnId).classList.replace('btn-primary', 'bg-gray-800');
+                document.getElementById(btnId).classList.replace('border-fcd34d', 'border-gray-600');
+            });
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            let activeBtn = document.getElementById(tabId.replace('tab-', 'btn-'));
+            activeBtn.classList.replace('bg-gray-800', 'btn-primary');
+            activeBtn.classList.replace('border-gray-600', 'border-fcd34d');
+        }
+
+        let currentArabicSentence = "";
+        function moveObject(position, arabicWord) {
+            playSoundEffect('flip');
+            const obj = document.getElementById('sim-object');
+            const base = document.getElementById('base-object');
+            const sentenceBox = document.getElementById('arabic-sentence');
+            const btnAudio = document.getElementById('btn-audio-sentence');
+            
+            obj.classList.remove('pos-center', 'pos-fi', 'pos-ala', 'pos-tahta');
+
+            if (position === 'fi') {
+                base.innerText = "🎒"; obj.classList.add('pos-fi');
+                currentArabicSentence = "المِسْطَرَةُ فِي الحَقِيبَةِ";
+                sentenceBox.innerHTML = `المِسْطَرَةُ <span class="text-purple-400">فِي</span> الحَقِيبَةِ<br><span class="text-sm font-sans text-gray-300 block font-normal">(Pembaris DI DALAM Beg)</span>`;
+            } else if (position === 'ala') {
+                base.innerText = "🪑"; obj.classList.add('pos-ala');
+                currentArabicSentence = "المِسْطَرَةُ عَلَى المَكْتَبِ";
+                sentenceBox.innerHTML = `المِسْطَرَةُ <span class="text-green-400">عَلَى</span> المَكْتَبِ<br><span class="text-sm font-sans text-gray-300 block font-normal">(Pembaris DI ATAS Meja)</span>`;
+            } else if (position === 'tahta') {
+                base.innerText = "🪑"; obj.classList.add('pos-tahta');
+                currentArabicSentence = "المِسْطَرَةُ تَحْتَ المَكْتَبِ";
+                sentenceBox.innerHTML = `المِسْطَرَةُ <span class="text-red-400">تَحْتَ</span> المَكْتَبِ<br><span class="text-sm font-sans text-gray-300 block font-normal">(Pembaris DI BAWAH Meja)</span>`;
+            }
+            
+            btnAudio.classList.remove('hidden');
+            btnAudio.onclick = () => playArabicAudio(currentArabicSentence);
+        }
+
+        /* --- STREAMING_CHUNK:Logik Permainan RPG --- */
+        const gameData = [
+            { name: "Stesen 1", story: "Apakah 'Buku' dalam Bahasa Arab?", emoji: "📖", opts: [ {t: "قَلَمٌ", c: false}, {t: "كِتَابٌ", c: true}, {t: "مِسْطَرَةٌ", c: false} ] },
+            { name: "Stesen 2", story: "Apakah 'Pensel' dalam Bahasa Arab?", emoji: "✏️", opts: [ {t: "حَقِيبَةٌ", c: false}, {t: "مِمْحَاةٌ", c: false}, {t: "قَلَمُ رَصَاصٍ", c: true} ] },
+            { name: "Stesen 3", story: "Pilih perkataan yang betul bagi 'Pembaris'!", emoji: "📏", opts: [ {t: "مِسْطَرَةٌ", c: true}, {t: "مِبْرَاةٌ", c: false}, {t: "دَفْتَرٌ", c: false} ] },
+            { name: "Stesen 4", story: "Apakah 'Beg' dalam Bahasa Arab?", emoji: "🎒", opts: [ {t: "كِتَابٌ", c: false}, {t: "حَقِيبَةٌ", c: true}, {t: "قَلَمٌ", c: false} ] },
+            { name: "Stesen 5", story: "Sebutkan 'Ini buku' menggunakan kata tunjuk (Haza) yang betul!", emoji: "👦📖", opts: [ {t: "هَذَا كِتَابٌ", c: true}, {t: "هَذِهِ كِتَابٌ", c: false}, {t: "هَذَا مِسْطَرَةٌ", c: false} ] },
+            { name: "Stesen 6", story: "Sebutkan 'Ini pembaris' menggunakan kata tunjuk (Hazihi) yang betul!", emoji: "👧📏", opts: [ {t: "هَذِهِ مِسْطَرَةٌ", c: true}, {t: "هَذَا مِسْطَرَةٌ", c: false}, {t: "هَذِهِ كِتَابٌ", c: false} ] },
+            { name: "Stesen 7", story: "Pensel ada di DALAM beg. Apakah perkataan 'Di Dalam'?", emoji: "🎒🖊️", opts: [ {t: "فِي", c: true}, {t: "عَلَى", c: false}, {t: "تَحْتَ", c: false} ] },
+            { name: "Stesen 8", story: "Buku terletak DI ATAS meja. Apakah perkataan 'Di Atas'?", emoji: "📚🪵", opts: [ {t: "فِي", c: false}, {t: "عَلَى", c: true}, {t: "أَمَامَ", c: false} ] },
+            { name: "Stesen 9", story: "Beg DI BAWAH meja. Apakah perkataan 'Di Bawah'?", emoji: "⬇️🎒", opts: [ {t: "عَلَى", c: false}, {t: "تَحْتَ", c: true}, {t: "فِي", c: false} ] },
+            { name: "Stesen 10: Boss Terakhir", story: "Susun ayat: 'Pembaris di dalam beg'.", emoji: "👑⚔️", opts: [ {t: "المِسْطَرَةُ عَلَى الحَقِيبَةِ", c: false}, {t: "المِسْطَرَةُ تَحْتَ الحَقِيبَةِ", c: false}, {t: "المِسْطَرَةُ فِي الحَقِيبَةِ", c: true} ] }
+        ];
+
+        let hp = 100, xp = 0, currentStation = 0;
+
+        function resetGame() {
+            hp = 100; xp = 0; currentStation = 0;
+            updateStatsUI();
+            hideModals();
+            loadStation();
+        }
+
+        function loadStation() {
+            const data = gameData[currentStation];
+            document.getElementById('station-title').innerText = data.name;
+            document.getElementById('progress-text').innerText = `${currentStation + 1} / 10`;
+            document.getElementById('story-text').innerText = data.story;
+            
+            const emj = document.getElementById('question-emoji');
+            emj.innerText = data.emoji;
+            emj.classList.remove('pop-in'); void emj.offsetWidth; emj.classList.add('pop-in');
+
+            document.getElementById('station-title').className = currentStation === 9 ? "text-xl font-bold text-red-500" : "text-xl font-bold text-yellow-400";
+            document.getElementById('avatar-emoji').innerText = currentStation === 9 ? "🦸‍♂️⚔️" : "🦸‍♂️";
+
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            let shuffled = [...data.opts].sort(() => Math.random() - 0.5);
+            shuffled.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "bg-gray-700 hover:bg-gray-600 border border-gray-500 rounded-xl p-6 transition transform hover:-translate-y-1 flex flex-col items-center shadow-md";
+                btn.onclick = () => checkAnswer(opt);
+                btn.innerHTML = `<span class="arabic-text text-4xl text-yellow-300 font-bold mb-2">${opt.t}</span>`;
+                
+                // Butang Audio berasingan dalam pilihan
+                const audioBtn = document.createElement('div');
+                audioBtn.className = "bg-blue-600 hover:bg-blue-500 p-2 rounded-full text-sm mt-2";
+                audioBtn.innerText = "🔊";
+                audioBtn.onclick = (e) => { e.stopPropagation(); playArabicAudio(opt.t); };
+                btn.appendChild(audioBtn);
+                
+                optsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(opt) {
+            if (opt.c) {
+                playSoundEffect('correct');
+                xp = Math.min(100, xp + 10);
+                hp = Math.min(100, hp + 10);
+                updateStatsUI();
+                showFeedback(true, opt.t);
+            } else {
+                playSoundEffect('wrong');
+                hp = Math.max(0, hp - 20);
+                updateStatsUI();
+                
+                const card = document.getElementById('avatar-card');
+                card.classList.add('shake-animation', 'border-red-500', 'border-2');
+                setTimeout(() => card.classList.remove('shake-animation', 'border-red-500', 'border-2'), 500);
+
+                if (hp === 0) setTimeout(() => showGameOver(), 600);
+                else showFeedback(false, opt.t);
+            }
+        }
+
+        function updateStatsUI() {
+            document.getElementById('hp-bar').style.width = `${hp}%`;
+            document.getElementById('hp-text').innerText = `${hp}/100`;
+            document.getElementById('xp-bar').style.width = `${xp}%`;
+            document.getElementById('xp-text').innerText = `${xp}/100`;
+
+            if (hp <= 30) document.getElementById('hp-bar').style.background = 'linear-gradient(90deg, #7f1d1d, #ef4444)';
+            else document.getElementById('hp-bar').style.background = 'linear-gradient(90deg, #ef4444, #f87171)';
+        }
+
+        function showFeedback(isCorrect, ansText) {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('feedback-modal').classList.remove('hidden');
+            
+            document.getElementById('feedback-desc').innerText = ansText;
+            document.getElementById('btn-audio-feedback').onclick = () => playArabicAudio(ansText);
+
+            const title = document.getElementById('feedback-title');
+            const icon = document.getElementById('feedback-icon');
+            const stats = document.getElementById('feedback-stats');
+            const btn = document.getElementById('next-btn');
+
+            if (isCorrect) {
+                title.innerText = "Tepat Sekali!"; title.className = "text-3xl font-bold mb-2 text-green-400";
+                icon.innerText = "✅";
+                stats.innerHTML = "<span class='text-blue-400'>+10 XP</span> | <span class='text-green-400'>+10 HP</span>";
+                btn.innerText = currentStation === 9 ? "Tuntut Lencana 🏅" : "Stesen Seterusnya ➡️";
+                
+                btn.onclick = () => {
+                    hideModals();
+                    if (currentStation === 9) showVictory();
+                    else { currentStation++; loadStation(); }
+                };
+            } else {
+                title.innerText = "Tersasar!"; title.className = "text-3xl font-bold mb-2 text-red-400";
+                icon.innerText = "💥";
+                stats.innerHTML = "<span class='text-red-500'>-20 HP Kerosakan!</span>";
+                btn.innerText = "Cuba Lagi Stesen Ini 🔄";
+                btn.onclick = () => hideModals();
+            }
+        }
+
+        function showVictory() {
+            playSoundEffect('win');
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('victory-modal').classList.remove('hidden');
+        }
+
+        function showGameOver() {
+            document.getElementById('overlay').classList.remove('hidden');
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function hideModals() {
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('feedback-modal').classList.add('hidden');
+            document.getElementById('victory-modal').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
